@@ -1,4 +1,4 @@
-function accepts_string!(fsm::FSM, input_string::Vector{Character})
+function accepts_string(fsm::FSM, input_string::Vector{Character})
     if !issubset(input_string, fsm.Σ)
         @error "State machine does not recognize input $input_string; alphabet $(fsm.Σ)"
         return false

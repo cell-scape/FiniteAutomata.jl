@@ -1,8 +1,5 @@
 # Finite Automata Types
 
-abstract type AbstractFiniteAutomaton end
-abstract type Node end
-abstract type Edge end
 
 const Character = Union{Nothing,Char}
 const Alphabet = Set{Character}
@@ -10,32 +7,24 @@ const Alphabet = Set{Character}
 const ϵ = nothing
 const ∅ = Set{Nothing}([])
 
-@kwdef mutable struct State <: Node
+@kwdef mutable struct State
     name::Symbol = Symbol()
-    transitions::Set{Edge} = Set{Edge}([])
+    transitions::Dict{Character,Symbol} = Dict{Character,Symbol}()
     accept::Bool = false
     initial::Bool = false
-    current::Character = ϵ
+    current::Union{Character,Missing} = missing
 
     State(n, t, a, i, c) = new(n, t, a, i, c)
 end
 
+const TransitionFunction = Dict{Tuple{Symbol,Character},Set{Symbol}}
 
-@kwdef mutable struct Transition <: Edge
-    next::Node = State()
-    symbol::Character = ϵ
-
-    Transition(n, s) = new(n, s)
-end
-
-const TransitionFunction = Dict{Tuple{State,Character},Set{State}}
-
-@kwdef mutable struct FSM <: AbstractFiniteAutomaton
-    Q::Set{Node} = Set{State}([])
+@kwdef mutable struct FSM
+    Q::Dict{Symbol,State} = Dict{Symbol,State}()
     Σ::Alphabet = ∅
     δ::TransitionFunction = TransitionFunction()
-    q0::Node = State(; initial=true)
-    F::Set{Node} = Set{State}([])
+    q0::State = State(; initial=true)
+    F::Set{Symbol} = Set{Symbol}([])
     input::Vector{Character} = Character[]
 
     FSM(Q, Σ, δ, q0, F, input) = new(Q, Σ, δ, q0, F, input)

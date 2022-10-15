@@ -1,13 +1,7 @@
-function build_fsm!(; patience=30)
+function build_fsm!()
     println("Finite State Machine Builder:\n-----------------------------\n")
     alphabet = input("Enter alphabet characters: ")
     while isempty(alphabet)
-        if iszero(patience)
-            @warn "FINE"
-            return FSM()
-        else
-            patience -= 1
-        end
         alphabet = input("Enter alphabet characters: ")
     end
     alphabet = split(alphabet, "") .|> first |> Set{Character}
@@ -15,37 +9,24 @@ function build_fsm!(; patience=30)
     y_n = input("Include ϵ in alphabet? (y/n)  ")
     while isempty(y_n) || first(lowercase(y_n)) ∉ ('y', 'n')
         y_n = input("Include ϵ in alphabet? (Please enter y or n) ")
-        if isempty(y_n)
-            patience -= 1
-        end
-        if iszero(patience)
-            @warn "FINE"
-            return FSM(; Σ=alphabet)
-        end
     end
     if first(lowercase(strip(y_n))) == 'y'
         push!(alphabet, ϵ)
     end
     nstates = tryparse(Int, input("Enter the number of states (e.g. `5`): "))
     while isnothing(nstates)
-        if iszero(patience)
-            @warn "FINE"
-            return FSM(; Σ=alphabet)
-        else
-            patience -= 1
-        end
         nstates = tryparse(Int, input("Enter the number of states (e.g. `5`): "))
     end
 
-    states = Dict{Symbol,State}()
-    transitions = Dict{Symbol,Vector{Pair{Character,Symbol}}}()
+    Q = Dict{Symbol,State}()
     δ = TransitionFunction()
     q0 = nothing
-    F = Set{State}([])
+    F = Set{Symbol}([])
     for i in 1:nstates
         name = Symbol(string("q", i))
         println("State $name: ")
         s = State(; name=name)
+        Q[name] = s
 
         if isnothing(q0)
             initial = input("Initial state? (y/n) ")
@@ -64,7 +45,7 @@ function build_fsm!(; patience=30)
         end
         if first(lowercase(strip(accept))) == 'y'
             s.accept = true
-            push!(F, s)
+            push!(F, s.name)
         end
 
         ntrans = tryparse(Int, input("Enter the number of transitions from this state (e.g. 2): "))
@@ -73,11 +54,11 @@ function build_fsm!(; patience=30)
         end
 
         for j in 1:ntrans
-            char = input("Transition $j: What symbol? ('epsilon' for epsilon)   ")
-            while char == "epsilon" && (ϵ ∉ alphabet)
-                char = input("What symbol? ('epsilon' not in alphabet: $alphabet)   ")
+            char = input("Transition $j: What symbol? ('eps' for epsilon)   ")
+            while char == "eps" && (ϵ ∉ alphabet)
+                char = input("What symbol? ('eps' not in alphabet: $alphabet)   ")
             end
-            if char == "epsilon"
+            if char == "eps"
                 char = ϵ
             else
                 char = first(lowercase(strip(char)))
@@ -99,29 +80,13 @@ function build_fsm!(; patience=30)
                     end
                 end
             end
-            if haskey(transitions, name)
-                push!(transitions[name], char => Symbol(string("q", target)))
+            if haskey(δ, (name, char))
+                push!(δ[(name, char)], Symbol(string("q", target)))
             else
-                transitions[name] = [char => Symbol(string("q", target))]
-            end
-        end
-        states[name] = s
-    end
-    for (state, transition) in transitions
-        for (char, next) in transition
-            t = Transition(; next=states[next], symbol=char)
-            push!(getproperty(states[state], :transitions), t)
-            if haskey(δ, (states[state], char))
-                push!(δ[(states[state], char)], states[next])
-            else
-                δ[(states[state], char)] = Set{State}([states[next]])
+                δ[(name, char)] = Set{Symbol}([Symbol(string("q", target))])
             end
         end
     end
-    if patience > 0
-        @info "thanks" patience
-    end
-    Q = Set{State}([v for (_, v) in states])
 
     return FSM(; Q=Q, Σ=alphabet, δ=δ, q0=q0, F=F)
 end
