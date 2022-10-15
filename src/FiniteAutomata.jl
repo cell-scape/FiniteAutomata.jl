@@ -1,6 +1,6 @@
 module FiniteAutomata
 
-using Base: @kwdef, show
+import Base: show, @kwdef
 
 include("constants.jl")
 include("types.jl")
