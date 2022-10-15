@@ -1,5 +1,11 @@
 module FiniteAutomata
 
-# Write your package code here.
+using Base: @kwdef, show
 
-end
+include("constants.jl")
+include("types.jl")
+include("util.jl")
+
+export State, Transition, NFA
+
+end # module
